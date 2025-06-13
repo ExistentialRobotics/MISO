@@ -1,0 +1,44 @@
+device: "cuda:0"
+model:
+  name: "grid_net"
+  spatial_dim: 3
+  decoder:
+    type: "none"
+    hidden_dim: 4
+    hidden_layers: 0
+    out_dim: 1
+    pos_invariant: True
+    fix: False
+  grid:
+    type: "regular"
+    feature_dim: 1
+    init_stddev: 0.0  
+    bound: [[-1., 1.], [-1., 1.], [-1., 1.]]
+    base_cell_size: 1.0
+    per_level_scale: 2.0
+    n_levels: 1
+  pose:
+    optimize: False
+    num_poses: 1 
+train:
+  verbose: True
+  optimizer: "adam"
+  learning_rate: 0.01
+  epochs: 1000
+  batch_size: 200000         
+  ckpt_every: -1
+  eval_every: -1
+  eval_metric: null
+  pretrained_model: null
+  log_dir: "./results/default"
+loss:
+  name: "SdfSiren"
+  sdf_weight: 3000.0
+  inter_weight: 100.0
+  sign_weight: 100.0
+  normal_weight: 100.0
+  eik_weight: 50.0
+dataset:
+  name: "SdfSiren"
+  path: "/mnt/drive/Datasets/SirenData/interior_room.xyz"
+

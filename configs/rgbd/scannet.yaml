@@ -1,0 +1,111 @@
+# Following is an example config for scene 0000
+define: &truncation_dist 0.15
+define: &num_frames 372
+define: &bound [[-0.02,  10.38], [-0.01, 8.74], [-0.01,  3.03]]  
+define: &gm_scale_sdf 0.10  # Suggested by PIN-SLAM (0.005 * RMAX)
+
+model:
+  name: "grid_net"
+  spatial_dim: 3
+  decoder:
+    type: "mlp"
+    hidden_dim: 64
+    hidden_layers: 1
+    out_dim: 1
+    pos_invariant: True
+    fix: True
+    pretrained_model:  "./results/trained_decoders/decoder_indoor.pt"
+  grid:
+    type: "regular"
+    feature_dim: 4 
+    init_stddev: 0.0  
+    bound: *bound  
+    base_cell_size: 0.5
+    per_level_scale: 5
+    n_levels: 2
+    second_order_grid_sample: True  # Optional: true requires the cuda_gridsample package to be on PATH
+  pose:
+    optimize: False
+    num_poses: *num_frames
+tracking:
+  solver: "adam"
+  learning_rate: 0.001
+  loss_type: "L1"  
+  trunc_dist: null 
+  gm_scale_sdf: *gm_scale_sdf 
+  lm_lambda: 0.0001
+  lm_max_iter: 30
+  lm_tol_deg: 0.01
+  lm_tol_m: 0.001
+  verbose: True
+mapping:
+  learning_rate: 0.001
+  loss_type: "L1"
+  weight_sdf: 1.0
+  weight_eik: 0.0
+  weight_fs: 0.1
+  trunc_dist: *truncation_dist
+  finite_diff_eps: 0.024      # 0.002 * RMAX
+  grad_method: "finitediff"
+  eik_trunc_dist: 0.024       # 0.002 * RMAX
+  verbose: False
+  max_replay_frames: 10
+  max_replay_freq: 10
+  gm_scale_sdf: *gm_scale_sdf 
+align:
+  level_iters: 100
+  finetune_iters: 100
+  learning_rate: 0.01
+  loss_type: "L2"
+  stability_thresh: 0.0
+  subsample_points: null
+  latent_levels: [0, 1]
+  skip_finetune: True
+  pose_reg_weight: 0.0
+  verbose: True
+  save_iterations: True
+system:
+  init_odom: "external"                # odometry to use for initialization
+  submap_size: 100                      # number of frames in a submap
+  submap_local_bound: [[-10, 10], [-5, 5], [-10, 10]]
+  submap_fov_thresh: 0.0             # Create a new submap if the overlap is less than this threshold
+  save_submap_mesh: False
+  log_dir: "./results/default"
+visualizer:
+  enable: True
+  mesh_vis_freq: 10                  # Frequency to update mesh visualization
+  show_mesh: True
+  show_path: True
+  show_curr_pose: True
+  show_submap_obb: False
+  show_submap_pcd: False
+train:
+  trainer: "base"
+  verbose: False
+  optimizer: "adam"
+  learning_rate: 0.001
+  epochs: 50
+  batch_size: 1000000     
+  ckpt_every: -1
+  eval_every: -1
+  pretrained_model: null
+  log_dir: "./results/default"
+  # Grid trainer parameters
+  relchange_tol: 0
+  max_epochs_in_level: 100
+  grid_training_mode: "coordinate+joint"
+dataset:
+  name: "ScanNet"
+  bounds_method: "ray"
+  trunc_dist: *truncation_dist                 # Yulun: used by encoder experiment
+  path: "./data/ScanNet/scene0169_00_mipsfusion"
+  online: False
+  intrinsics_file: "./data/ScanNet/scene0169_00_mipsfusion/scene0169_00.txt"
+  depth_scale: 1000.0
+  voxel_size: null                # Voxel downsampling (null for no downsampling)
+sample:
+  n_rays: 200
+  depth_range: [0.07, 12.0]
+  dist_behind_surf: 0.1
+  n_strat_samples: 19
+  n_surf_samples: 8 

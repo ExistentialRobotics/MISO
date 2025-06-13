@@ -1,8 +1,6 @@
 figures/
 results/
 
-*.DS_Store
-
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -166,7 +164,4 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-data/ReplicaCAD
-data/ScanNet
-data/FastCaMo-large
-data/nc
+data

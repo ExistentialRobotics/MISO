@@ -1,0 +1,105 @@
+define: &truncation_dist 0.50
+define: &num_frames 1991
+define: &bound [[-5, 57], [-71, 2], [-3, 20]]  # Quad easy
+define: &gm_scale_sdf 0.3  # Suggested by PIN-SLAM (0.005 * 60)
+
+model:
+  name: "grid_net"
+  spatial_dim: 3
+  decoder:
+    type: "mlp"
+    hidden_dim: 64
+    hidden_layers: 1
+    out_dim: 1
+    pos_invariant: True
+    fix: True
+    pretrained_model:  "./results/trained_decoders/decoder_quad.pt"
+  grid:
+    type: "regular"
+    feature_dim: 4 
+    init_stddev: 0.0  
+    bound: *bound  # nc quad
+    base_cell_size: 1
+    per_level_scale: 5.0
+    n_levels: 2
+    second_order_grid_sample: False  # Optional: true requires the cuda_gridsample package to be on PATH
+  pose:
+    optimize: False
+    num_poses: *num_frames
+tracking:
+  solver: "lm"
+  learning_rate: 0.001
+  loss_type: "GM"  
+  trunc_dist: null 
+  gm_scale_sdf: *gm_scale_sdf 
+  lm_lambda: 0.0001
+  lm_max_iter: 10
+  lm_tol_deg: 0.01
+  lm_tol_m: 0.001
+  verbose: False
+mapping:
+  learning_rate: 0.001
+  loss_type: "L2"
+  weight_sdf: 1.0
+  weight_eik: 0.0
+  weight_fs: 0.5
+  trunc_dist: *truncation_dist
+  finite_diff_eps: 0.5
+  grad_method: "finitediff"
+  eik_trunc_dist: 0.5
+  verbose: False
+  max_replay_frames: 10
+  max_replay_freq: 10
+  gm_scale_sdf: *gm_scale_sdf 
+align:
+  level_iters: 50
+  finetune_iters: 50
+  learning_rate: 0.01
+  loss_type: "L2"
+  stability_thresh: 0.0
+  subsample_points: null
+  latent_levels: [1]
+  skip_finetune: True
+  pose_reg_weight: 0.0
+  verbose: True
+system:
+  init_odom: "external" 
+  submap_size: 200                   # number of frames in a submap
+  submap_local_bound: [[-45, 45], [-45, 45], [-5, 15]]
+  submap_fov_thresh: 0.0             # Create a new submap if the overlap is less than this threshold
+  save_submap_mesh: False
+  log_dir: "./results/default"
+visualizer:
+  enable: True
+  mesh_vis_freq: 50                  # Frequency to update mesh visualization
+  show_mesh: True
+  show_path: True
+  show_curr_pose: True
+  show_submap_obb: False
+  show_submap_pcd: False
+train:
+  trainer: "base"
+  verbose: False
+  optimizer: "adam"
+  learning_rate: 0.001
+  epochs: 50
+  batch_size: 1000000     
+  ckpt_every: -1
+  eval_every: -1
+  pretrained_model: null
+  log_dir: "./results/default"
+  # Grid trainer parameters
+  relchange_tol: 0
+  max_epochs_in_level: 100
+  grid_training_mode: "coordinate+joint"
+dataset:
+  name: "PosedSdf3DLidar"
+  root: "data/Newer_College/quad_e/"
+  path: "data/Newer_College/quad_e/ply"
+  pose_gt: "data/Newer_College/quad_e/poses_gt.txt"
+  pose_init: "data/Newer_College/quad_e/poses_reg_icp.txt"
+  trunc_dist: *truncation_dist
+  num_frames: *num_frames
+  frame_samples: 5000
+  frame_batchsize: 1024
+  bound: *bound
